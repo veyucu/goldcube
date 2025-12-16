@@ -34,6 +34,9 @@ jobs:
       - name: Web build
         run: npm run build
       
+      - name: Android platformunu ekle
+        run: npx cap add android
+      
       - name: Capacitor sync
         run: npx cap sync android
       
