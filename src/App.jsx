@@ -1,263 +1,131 @@
-import React, { useState } from 'react';
-import { ShoppingCart, Search, Menu, X, Diamond, DollarSign, CreditCard, Banknote, Printer, User, CheckCircle, Calculator } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { ShoppingCart, Search, Menu, X, Diamond, DollarSign, CreditCard, Banknote, Printer, User, CheckCircle, Calculator, Camera, Scan, ArrowDownUp, UserCircle, Plus, Minus, TrendingUp, TrendingDown, ChevronRight } from 'lucide-react';
 
 function App() {
   const [cart, setCart] = useState([]);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState('Tümü');
-  const [searchTerm, setSearchTerm] = useState('');
+  const [transactionType, setTransactionType] = useState('satis'); // 'satis' veya 'alis'
+  const [operationType, setOperationType] = useState('altin'); // 'altin', 'pirlanta', 'ziynet', 'doviz', 'hurda'
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [showCustomerModal, setShowCustomerModal] = useState(false);
+  const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const [currency, setCurrency] = useState('TRY');
   const [customerName, setCustomerName] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
+  const barcodeInputRef = useRef(null);
 
-  const categories = ['Tümü', 'Yüzük', 'Kolye', 'Bileklik', 'Küpe', 'Altın', 'Pırlanta', 'Set', 'İkili'];
+  // Müşteri veritabanı
+  const customers = [
+    { id: 1, name: 'Ahmet Yılmaz', phone: '0532 123 4567', email: 'ahmet@email.com', totalPurchases: 125000, vip: true },
+    { id: 2, name: 'Ayşe Demir', phone: '0533 234 5678', email: 'ayse@email.com', totalPurchases: 85000, vip: false },
+    { id: 3, name: 'Mehmet Kaya', phone: '0534 345 6789', email: 'mehmet@email.com', totalPurchases: 210000, vip: true },
+    { id: 4, name: 'Fatma Şahin', phone: '0535 456 7890', email: 'fatma@email.com', totalPurchases: 45000, vip: false },
+    { id: 5, name: 'Ali Öztürk', phone: '0536 567 8901', email: 'ali@email.com', totalPurchases: 156000, vip: true },
+    { id: 6, name: 'Zeynep Aydın', phone: '0537 678 9012', email: 'zeynep@email.com', totalPurchases: 32000, vip: false },
+  ];
+
+  // Ürün veritabanı - İşlem tipine göre
+  const allProducts = {
+    altin: [
+      { id: 'AU001', name: 'Çeyrek Altın', code: 'AU001', price: 2850, weight: '1.75g', type: 'altin', karat: '22K', buyPrice: 2800 },
+      { id: 'AU002', name: 'Yarım Altın', code: 'AU002', price: 5700, weight: '3.5g', type: 'altin', karat: '22K', buyPrice: 5600 },
+      { id: 'AU003', name: 'Tam Altın', code: 'AU003', price: 11400, weight: '7g', type: 'altin', karat: '22K', buyPrice: 11200 },
+      { id: 'AU004', name: 'Cumhuriyet Altını', code: 'AU004', price: 12100, weight: '7.2g', type: 'altin', karat: '22K', buyPrice: 11900 },
+      { id: 'AU005', name: 'Reşat Altını', code: 'AU005', price: 12500, weight: '7.2g', type: 'altin', karat: '22K', buyPrice: 12300 },
+      { id: 'AU006', name: 'Gram Altın', code: 'AU006', price: 1620, weight: '1g', type: 'altin', karat: '24K', buyPrice: 1600 },
+    ],
+    pirlanta: [
+      { id: 'DM001', name: '0.50 Karat Pırlanta', code: 'DM001', price: 18500, weight: '0.50ct', type: 'pirlanta', clarity: 'VS1', color: 'H', buyPrice: 17000 },
+      { id: 'DM002', name: '1.00 Karat Pırlanta', code: 'DM002', price: 42000, weight: '1.00ct', type: 'pirlanta', clarity: 'VS2', color: 'G', buyPrice: 39000 },
+      { id: 'DM003', name: '0.25 Karat Pırlanta', code: 'DM003', price: 8500, weight: '0.25ct', type: 'pirlanta', clarity: 'SI1', color: 'I', buyPrice: 7800 },
+      { id: 'DM004', name: '1.50 Karat Pırlanta', code: 'DM004', price: 68000, weight: '1.50ct', type: 'pirlanta', clarity: 'VVS2', color: 'F', buyPrice: 63000 },
+      { id: 'DM005', name: '2.00 Karat Pırlanta', code: 'DM005', price: 125000, weight: '2.00ct', type: 'pirlanta', clarity: 'VVS1', color: 'E', buyPrice: 115000 },
+    ],
+    ziynet: [
+      { id: 'ZY001', name: '14K Altın Yüzük', code: 'ZY001', price: 8500, weight: '4.2g', type: 'ziynet', karat: '14K', category: 'Yüzük', buyPrice: 7800 },
+      { id: 'ZY002', name: '18K Pırlanta Kolye', code: 'ZY002', price: 15600, weight: '5.8g', type: 'ziynet', karat: '18K', category: 'Kolye', buyPrice: 14200 },
+      { id: 'ZY003', name: '22K Bileklik', code: 'ZY003', price: 12800, weight: '8.5g', type: 'ziynet', karat: '22K', category: 'Bileklik', buyPrice: 11900 },
+      { id: 'ZY004', name: '14K Damla Küpe', code: 'ZY004', price: 6200, weight: '3.1g', type: 'ziynet', karat: '14K', category: 'Küpe', buyPrice: 5700 },
+      { id: 'ZY005', name: '18K Alyans Seti', code: 'ZY005', price: 19500, weight: '9.2g', type: 'ziynet', karat: '18K', category: 'Set', buyPrice: 18000 },
+      { id: 'ZY006', name: '22K Has Bileklik', code: 'ZY006', price: 24500, weight: '15.3g', type: 'ziynet', karat: '22K', category: 'Bileklik', buyPrice: 22800 },
+    ],
+    doviz: [
+      { id: 'FX001', name: 'ABD Doları', code: 'FX001', price: 34.25, buyPrice: 34.15, type: 'doviz', symbol: '$', unit: 'USD' },
+      { id: 'FX002', name: 'Euro', code: 'FX002', price: 37.42, buyPrice: 37.30, type: 'doviz', symbol: '€', unit: 'EUR' },
+      { id: 'FX003', name: 'İngiliz Sterlini', code: 'FX003', price: 43.85, buyPrice: 43.70, type: 'doviz', symbol: '£', unit: 'GBP' },
+      { id: 'FX004', name: 'İsviçre Frangı', code: 'FX004', price: 39.20, buyPrice: 39.05, type: 'doviz', symbol: 'CHF', unit: 'CHF' },
+    ],
+    hurda: [
+      { id: 'HR001', name: 'Hurda 8 Ayar', code: 'HR001', price: 0, weight: '0g', type: 'hurda', karat: '8K', buyPrice: 520 },
+      { id: 'HR002', name: 'Hurda 14 Ayar', code: 'HR002', price: 0, weight: '0g', type: 'hurda', karat: '14K', buyPrice: 920 },
+      { id: 'HR003', name: 'Hurda 18 Ayar', code: 'HR003', price: 0, weight: '0g', type: 'hurda', karat: '18K', buyPrice: 1180 },
+      { id: 'HR004', name: 'Hurda 22 Ayar', code: 'HR004', price: 0, weight: '0g', type: 'hurda', karat: '22K', buyPrice: 1450 },
+      { id: 'HR005', name: 'Hurda 24 Ayar', code: 'HR005', price: 0, weight: '0g', type: 'hurda', karat: '24K', buyPrice: 1600 },
+    ]
+  };
+
+  const operationTypes = [
+    { id: 'altin', name: 'Altın', icon: '🪙', color: 'bg-yellow-500' },
+    { id: 'pirlanta', name: 'Pırlanta', icon: '💎', color: 'bg-blue-500' },
+    { id: 'ziynet', name: 'Ziynet', icon: '👑', color: 'bg-purple-500' },
+    { id: 'doviz', name: 'Döviz', icon: '💵', color: 'bg-green-500' },
+    { id: 'hurda', name: 'Hurda', icon: '♻️', color: 'bg-orange-500' },
+  ];
 
   const currencyRates = {
     TRY: 1,
-    USD: 0.031,
-    EUR: 0.029,
-    GBP: 0.025
+    USD: 0.029,
+    EUR: 0.027,
+    GBP: 0.023
   };
 
-  const products = [
-    {
-      id: 1,
-      name: '14K Pırlanta Yüzük',
-      category: 'Yüzük',
-      price: 12500,
-      weight: '3.5g',
-      image: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=300&h=300&fit=crop',
-      karat: '14K',
-      stone: '0.25 ct',
-      code: 'YZK-001'
-    },
-    {
-      id: 2,
-      name: '22K Altın Bileklik',
-      category: 'Bileklik',
-      price: 8750,
-      weight: '12.8g',
-      image: 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=300&h=300&fit=crop',
-      karat: '22K',
-      code: 'BLK-002'
-    },
-    {
-      id: 3,
-      name: 'Elmas Kolye',
-      category: 'Kolye',
-      price: 18900,
-      weight: '5.2g',
-      image: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=300&h=300&fit=crop',
-      karat: '18K',
-      stone: '0.50 ct',
-      code: 'KLY-003'
-    },
-    {
-      id: 4,
-      name: 'Pırlanta Küpe',
-      category: 'Küpe',
-      price: 15600,
-      weight: '4.1g',
-      image: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=300&h=300&fit=crop',
-      karat: '18K',
-      stone: '0.35 ct',
-      code: 'KPE-004'
-    },
-    {
-      id: 5,
-      name: 'Altın Halka Küpe',
-      category: 'Küpe',
-      price: 6200,
-      weight: '6.3g',
-      image: 'https://images.unsplash.com/photo-1590164018433-2444895f3c93?w=300&h=300&fit=crop',
-      karat: '22K',
-      code: 'KPE-005'
-    },
-    {
-      id: 6,
-      name: 'Tasarım Yüzük',
-      category: 'Yüzük',
-      price: 9800,
-      weight: '4.8g',
-      image: 'https://images.unsplash.com/photo-1603561591411-07134e71a2a9?w=300&h=300&fit=crop',
-      karat: '18K',
-      code: 'YZK-006'
-    },
-    {
-      id: 7,
-      name: 'İnce Altın Bileklik',
-      category: 'Bileklik',
-      price: 7400,
-      weight: '8.5g',
-      image: 'https://images.unsplash.com/photo-1602173574767-37ac01994b2a?w=300&h=300&fit=crop',
-      karat: '14K',
-      code: 'BLK-007'
-    },
-    {
-      id: 8,
-      name: 'Zümrüt Kolye',
-      category: 'Kolye',
-      price: 22500,
-      weight: '6.7g',
-      image: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=300&h=300&fit=crop',
-      karat: '18K',
-      stone: 'Zümrüt',
-      code: 'KLY-008'
-    },
-    {
-      id: 9,
-      name: 'Altın Zincir',
-      category: 'Kolye',
-      price: 5600,
-      weight: '9.2g',
-      image: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=300&h=300&fit=crop',
-      karat: '22K',
-      code: 'KLY-009'
-    },
-    {
-      id: 10,
-      name: 'Tek Taş Yüzük',
-      category: 'Yüzük',
-      price: 14200,
-      weight: '3.1g',
-      image: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=300&h=300&fit=crop',
-      karat: '18K',
-      stone: '0.40 ct',
-      code: 'YZK-010'
-    },
-    {
-      id: 11,
-      name: 'Dörtlü Bileklik',
-      category: 'Bileklik',
-      price: 11300,
-      weight: '15.3g',
-      image: 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=300&h=300&fit=crop',
-      karat: '22K',
-      code: 'BLK-011'
-    },
-    {
-      id: 12,
-      name: 'Damla Küpe',
-      category: 'Küpe',
-      price: 8900,
-      weight: '3.8g',
-      image: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=300&h=300&fit=crop',
-      karat: '14K',
-      stone: '0.20 ct',
-      code: 'KPE-012'
-    },
-    {
-      id: 13,
-      name: 'Alyans Set',
-      category: 'Set',
-      price: 16800,
-      weight: '8.5g',
-      image: 'https://images.unsplash.com/photo-1603561591411-07134e71a2a9?w=300&h=300&fit=crop',
-      karat: '14K',
-      code: 'SET-013'
-    },
-    {
-      id: 14,
-      name: 'Has Altın Bileklik',
-      category: 'Bileklik',
-      price: 19500,
-      weight: '24.1g',
-      image: 'https://images.unsplash.com/photo-1602173574767-37ac01994b2a?w=300&h=300&fit=crop',
-      karat: '22K',
-      code: 'BLK-014'
-    },
-    {
-      id: 15,
-      name: 'Beştaş Yüzük',
-      category: 'Yüzük',
-      price: 17600,
-      weight: '4.2g',
-      image: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=300&h=300&fit=crop',
-      karat: '18K',
-      stone: '0.60 ct',
-      code: 'YZK-015'
-    },
-    {
-      id: 16,
-      name: 'İkili Altın Zincir',
-      category: 'İkili',
-      price: 13400,
-      weight: '18.7g',
-      image: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=300&h=300&fit=crop',
-      karat: '22K',
-      code: 'IKL-016'
-    },
-    {
-      id: 17,
-      name: 'Sıra Taş Küpe',
-      category: 'Küpe',
-      price: 12100,
-      weight: '5.3g',
-      image: 'https://images.unsplash.com/photo-1590164018433-2444895f3c93?w=300&h=300&fit=crop',
-      karat: '18K',
-      stone: '0.45 ct',
-      code: 'KPE-017'
-    },
-    {
-      id: 18,
-      name: 'Lüks Kolye Set',
-      category: 'Set',
-      price: 28900,
-      weight: '11.2g',
-      image: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=300&h=300&fit=crop',
-      karat: '18K',
-      stone: '1.20 ct',
-      code: 'SET-018'
-    },
-    {
-      id: 19,
-      name: 'Kare Taş Yüzük',
-      category: 'Yüzük',
-      price: 10700,
-      weight: '3.9g',
-      image: 'https://images.unsplash.com/photo-1603561591411-07134e71a2a9?w=300&h=300&fit=crop',
-      karat: '14K',
-      stone: '0.30 ct',
-      code: 'YZK-019'
-    },
-    {
-      id: 20,
-      name: 'Zincir Bileklik',
-      category: 'Bileklik',
-      price: 9200,
-      weight: '10.8g',
-      image: 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=300&h=300&fit=crop',
-      karat: '22K',
-      code: 'BLK-020'
-    }
-  ];
+  const products = allProducts[operationType] || [];
 
   const addToCart = (product) => {
-    const existingItem = cart.find(item => item.id === product.id);
+    const existingItem = cart.find(item => item.id === product.id && item.transactionType === transactionType);
     if (existingItem) {
       setCart(cart.map(item =>
-        item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
+        item.id === product.id && item.transactionType === transactionType
+          ? { ...item, quantity: item.quantity + 1 }
+          : item
       ));
     } else {
-      setCart([...cart, { ...product, quantity: 1 }]);
+      setCart([...cart, { ...product, quantity: 1, transactionType, operationType }]);
     }
   };
 
-  const removeFromCart = (productId) => {
-    const existingItem = cart.find(item => item.id === productId);
+  const removeFromCart = (productId, txType) => {
+    const existingItem = cart.find(item => item.id === productId && item.transactionType === txType);
     if (existingItem.quantity > 1) {
       setCart(cart.map(item =>
-        item.id === productId ? { ...item, quantity: item.quantity - 1 } : item
+        item.id === productId && item.transactionType === txType
+          ? { ...item, quantity: item.quantity - 1 }
+          : item
       ));
     } else {
-      setCart(cart.filter(item => item.id !== productId));
+      setCart(cart.filter(item => !(item.id === productId && item.transactionType === txType)));
+    }
+  };
+
+  const updateQuantity = (productId, txType, newQuantity) => {
+    if (newQuantity <= 0) {
+      setCart(cart.filter(item => !(item.id === productId && item.transactionType === txType)));
+    } else {
+      setCart(cart.map(item =>
+        item.id === productId && item.transactionType === txType
+          ? { ...item, quantity: newQuantity }
+          : item
+      ));
     }
   };
 
   const getTotalPrice = () => {
-    return cart.reduce((total, item) => total + (item.price * item.quantity), 0);
+    return cart.reduce((total, item) => {
+      const itemPrice = item.transactionType === 'satis' ? item.price : item.buyPrice;
+      return total + (itemPrice * item.quantity);
+    }, 0);
   };
 
   const getTotalItems = () => {
@@ -273,8 +141,12 @@ function App() {
   };
 
   const handlePayment = () => {
-    if (!customerName || !paymentMethod) {
-      alert('Lütfen müşteri adı ve ödeme yöntemi seçiniz');
+    if (!selectedCustomer) {
+      alert('Lütfen müşteri seçiniz');
+      return;
+    }
+    if (!paymentMethod) {
+      alert('Lütfen ödeme yöntemi seçiniz');
       return;
     }
     setShowSuccess(true);
@@ -282,17 +154,32 @@ function App() {
       setShowSuccess(false);
       setShowPaymentModal(false);
       setCart([]);
-      setCustomerName('');
       setPaymentMethod('');
-    }, 2000);
+    }, 2500);
   };
 
-  const filteredProducts = products.filter(product => {
-    const matchesCategory = selectedCategory === 'Tümü' || product.category === selectedCategory;
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          product.code.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
+  const handleBarcodeSubmit = (e) => {
+    e.preventDefault();
+    const barcode = barcodeInputRef.current.value;
+    const product = products.find(p => p.code === barcode);
+    if (product) {
+      addToCart(product);
+      barcodeInputRef.current.value = '';
+      setShowBarcodeScanner(false);
+    } else {
+      alert('Ürün bulunamadı!');
+    }
+  };
+
+  const filteredProducts = products.filter(product =>
+    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    product.code.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const filteredCustomers = customers.filter(customer =>
+    customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    customer.phone.includes(searchTerm)
+  );
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -304,11 +191,10 @@ function App() {
               <Diamond className="w-7 h-7 md:w-8 md:h-8" />
               <div>
                 <h1 className="text-xl md:text-2xl font-bold">GoldCube POS</h1>
-                <p className="text-xs text-gold-100">Satış Terminali</p>
+                <p className="text-xs text-gold-100">Kapsamlı İşlem Terminali</p>
               </div>
             </div>
             
-            {/* Currency Selector */}
             <div className="flex items-center gap-2">
               <select 
                 value={currency}
@@ -337,94 +223,186 @@ function App() {
       <div className="container mx-auto px-3 py-4">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
           {/* Main Content */}
-          <div className="lg:col-span-3">
-            {/* Search Bar */}
-            <div className="mb-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <input
-                  type="text"
-                  placeholder="Ürün adı veya kodu ile ara..."
-                  className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:border-gold-500 focus:outline-none text-sm bg-white"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
+          <div className="lg:col-span-3 space-y-4">
+            {/* Müşteri Seçimi */}
+            <div className="bg-white rounded-lg shadow-md p-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                  <UserCircle className="w-5 h-5" />
+                  Müşteri
+                </h3>
+                <button
+                  onClick={() => setShowCustomerModal(true)}
+                  className="bg-gold-600 hover:bg-gold-700 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition flex items-center gap-1"
+                >
+                  <User className="w-4 h-4" />
+                  {selectedCustomer ? 'Değiştir' : 'Seç'}
+                </button>
               </div>
+              {selectedCustomer && (
+                <div className="mt-3 bg-gold-50 rounded-lg p-3 border border-gold-200">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-semibold text-gray-800 flex items-center gap-2">
+                        {selectedCustomer.name}
+                        {selectedCustomer.vip && <span className="text-xs bg-gold-600 text-white px-2 py-0.5 rounded-full">VIP</span>}
+                      </p>
+                      <p className="text-sm text-gray-600">{selectedCustomer.phone}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-gray-500">Toplam Alışveriş</p>
+                      <p className="text-sm font-bold text-gold-700">₺{selectedCustomer.totalPurchases.toLocaleString()}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* Categories */}
-            <div className="mb-4 overflow-x-auto scrollbar-hide">
-              <div className="flex gap-2">
-                {categories.map(category => (
+            {/* İşlem Tipi ve Yönü */}
+            <div className="bg-white rounded-lg shadow-md p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold text-gray-700">İşlem Tipi</h3>
+                <div className="flex bg-gray-200 rounded-lg p-1">
                   <button
-                    key={category}
-                    onClick={() => setSelectedCategory(category)}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition ${
-                      selectedCategory === category
-                        ? 'bg-gold-600 text-white'
-                        : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
+                    onClick={() => setTransactionType('satis')}
+                    className={`px-4 py-1.5 rounded-md text-sm font-medium transition flex items-center gap-1 ${
+                      transactionType === 'satis'
+                        ? 'bg-green-600 text-white shadow-md'
+                        : 'text-gray-600 hover:bg-gray-300'
                     }`}
                   >
-                    {category}
+                    <TrendingUp className="w-4 h-4" />
+                    SATIŞ
+                  </button>
+                  <button
+                    onClick={() => setTransactionType('alis')}
+                    className={`px-4 py-1.5 rounded-md text-sm font-medium transition flex items-center gap-1 ${
+                      transactionType === 'alis'
+                        ? 'bg-blue-600 text-white shadow-md'
+                        : 'text-gray-600 hover:bg-gray-300'
+                    }`}
+                  >
+                    <TrendingDown className="w-4 h-4" />
+                    ALIŞ
+                  </button>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-5 gap-2">
+                {operationTypes.map(type => (
+                  <button
+                    key={type.id}
+                    onClick={() => setOperationType(type.id)}
+                    className={`p-3 rounded-lg border-2 transition ${
+                      operationType === type.id
+                        ? `${type.color} text-white border-transparent shadow-lg`
+                        : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="text-2xl mb-1">{type.icon}</div>
+                    <div className="text-xs font-semibold">{type.name}</div>
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Products Grid - Kompakt */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-              {filteredProducts.map(product => (
-                <div 
-                  key={product.id} 
-                  className="bg-white rounded-lg shadow hover:shadow-lg transition-all cursor-pointer group"
-                  onClick={() => addToCart(product)}
+            {/* Arama ve Barkod */}
+            <div className="bg-white rounded-lg shadow-md p-4">
+              <div className="flex gap-2">
+                <div className="flex-1 relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <input
+                    type="text"
+                    placeholder="Ürün ara (ad veya kod)..."
+                    className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:border-gold-500 focus:outline-none text-sm"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+                <button
+                  onClick={() => setShowBarcodeScanner(true)}
+                  className="bg-gold-600 hover:bg-gold-700 text-white px-4 py-2 rounded-lg transition flex items-center gap-2"
                 >
-                  <div className="relative overflow-hidden aspect-square rounded-t-lg">
-                    <img 
-                      src={product.image} 
-                      alt={product.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                    <div className="absolute top-1 right-1 bg-gold-600 text-white px-1.5 py-0.5 rounded text-xs font-bold">
-                      {product.karat}
+                  <Scan className="w-4 h-4" />
+                  <span className="hidden sm:inline">Barkod</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Ürünler */}
+            <div className="bg-white rounded-lg shadow-md p-4">
+              <h3 className="text-sm font-semibold text-gray-700 mb-3">
+                {operationTypes.find(t => t.id === operationType)?.name} {transactionType === 'satis' ? 'Satışı' : 'Alışı'}
+              </h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 max-h-96 overflow-y-auto">
+                {filteredProducts.map(product => (
+                  <div
+                    key={product.id}
+                    className="border border-gray-200 rounded-lg p-3 hover:border-gold-500 hover:shadow-md transition cursor-pointer"
+                    onClick={() => addToCart(product)}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs text-gray-500 font-mono">{product.code}</span>
+                      {product.karat && (
+                        <span className="text-xs bg-gold-100 text-gold-800 px-2 py-0.5 rounded-full font-bold">
+                          {product.karat}
+                        </span>
+                      )}
                     </div>
-                  </div>
-                  <div className="p-2">
-                    <p className="text-xs text-gray-500 mb-1">{product.code}</p>
-                    <h3 className="font-semibold text-sm text-gray-800 mb-1 line-clamp-2 min-h-[2.5rem]">
-                      {product.name}
-                    </h3>
-                    <div className="flex items-center justify-between text-xs text-gray-600 mb-2">
-                      <span>{product.weight}</span>
-                      {product.stone && <span className="text-gold-700">💎 {product.stone}</span>}
-                    </div>
+                    <h4 className="font-semibold text-sm text-gray-800 mb-1">{product.name}</h4>
+                    {product.weight && (
+                      <p className="text-xs text-gray-600 mb-2">{product.weight}</p>
+                    )}
+                    {product.clarity && (
+                      <p className="text-xs text-gray-600 mb-2">
+                        {product.clarity} / {product.color}
+                      </p>
+                    )}
+                    {product.category && (
+                      <p className="text-xs text-gray-600 mb-2">{product.category}</p>
+                    )}
+                    {product.symbol && (
+                      <p className="text-xs text-gray-600 mb-2">{product.symbol} {product.unit}</p>
+                    )}
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-bold text-gold-700">
-                        ₺{product.price.toLocaleString('tr-TR')}
-                      </span>
+                      <div>
+                        {transactionType === 'satis' && product.price > 0 && (
+                          <p className="text-sm font-bold text-green-600">
+                            ₺{product.price.toLocaleString()}
+                          </p>
+                        )}
+                        {transactionType === 'alis' && product.buyPrice > 0 && (
+                          <p className="text-sm font-bold text-blue-600">
+                            ₺{product.buyPrice.toLocaleString()}
+                          </p>
+                        )}
+                      </div>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           addToCart(product);
                         }}
-                        className="bg-gold-600 hover:bg-gold-700 text-white p-1.5 rounded transition"
+                        className={`p-1.5 rounded transition ${
+                          transactionType === 'satis'
+                            ? 'bg-green-600 hover:bg-green-700'
+                            : 'bg-blue-600 hover:bg-blue-700'
+                        } text-white`}
                       >
-                        <ShoppingCart className="w-3.5 h-3.5" />
+                        <Plus className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-
-            {filteredProducts.length === 0 && (
-              <div className="text-center py-12 bg-white rounded-lg shadow">
-                <p className="text-gray-500">Ürün bulunamadı</p>
+                ))}
               </div>
-            )}
+              {filteredProducts.length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  Ürün bulunamadı
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Cart Sidebar */}
+          {/* Sepet Sidebar */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-lg shadow-lg p-4 sticky top-20">
               <div className="flex items-center justify-between mb-4">
@@ -444,35 +422,55 @@ function App() {
                 </div>
               ) : (
                 <>
-                  <div className="space-y-2 mb-4 max-h-80 overflow-y-auto scrollbar-hide">
+                  <div className="space-y-2 mb-4 max-h-80 overflow-y-auto">
                     {cart.map(item => (
-                      <div key={item.id} className="flex gap-2 bg-gray-50 p-2 rounded-lg">
-                        <img 
-                          src={item.image} 
-                          alt={item.name}
-                          className="w-12 h-12 object-cover rounded"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-semibold text-xs text-gray-800 truncate">{item.name}</h4>
-                          <p className="text-xs text-gray-500">{item.code}</p>
-                          <p className="text-sm text-gold-700 font-bold">
-                            ₺{item.price.toLocaleString('tr-TR')}
-                          </p>
+                      <div key={`${item.id}-${item.transactionType}`} className="bg-gray-50 p-2 rounded-lg border border-gray-200">
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className={`text-xs px-2 py-0.5 rounded-full ${
+                                item.transactionType === 'satis'
+                                  ? 'bg-green-100 text-green-700'
+                                  : 'bg-blue-100 text-blue-700'
+                              }`}>
+                                {item.transactionType === 'satis' ? 'SATIŞ' : 'ALIŞ'}
+                              </span>
+                              <span className="text-xs text-gray-500">{item.code}</span>
+                            </div>
+                            <h4 className="font-semibold text-xs text-gray-800">{item.name}</h4>
+                            <p className="text-xs text-gray-600">{item.weight || item.unit}</p>
+                          </div>
+                          <button
+                            onClick={() => removeFromCart(item.id, item.transactionType)}
+                            className="text-red-500 hover:text-red-700 p-1"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
                         </div>
-                        <div className="flex flex-col items-center justify-center gap-1">
-                          <button
-                            onClick={() => addToCart(item)}
-                            className="w-5 h-5 bg-gold-600 hover:bg-gold-700 rounded flex items-center justify-center text-white text-xs font-bold"
-                          >
-                            +
-                          </button>
-                          <span className="text-xs font-medium">{item.quantity}</span>
-                          <button
-                            onClick={() => removeFromCart(item.id)}
-                            className="w-5 h-5 bg-gray-300 hover:bg-gray-400 rounded flex items-center justify-center text-gray-700 text-xs font-bold"
-                          >
-                            -
-                          </button>
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm font-bold text-gold-700">
+                            ₺{(item.transactionType === 'satis' ? item.price : item.buyPrice).toLocaleString()}
+                          </p>
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => updateQuantity(item.id, item.transactionType, item.quantity - 1)}
+                              className="w-6 h-6 bg-gray-300 hover:bg-gray-400 rounded flex items-center justify-center"
+                            >
+                              <Minus className="w-3 h-3" />
+                            </button>
+                            <input
+                              type="number"
+                              value={item.quantity}
+                              onChange={(e) => updateQuantity(item.id, item.transactionType, parseInt(e.target.value) || 0)}
+                              className="w-10 text-center text-sm border border-gray-300 rounded"
+                            />
+                            <button
+                              onClick={() => updateQuantity(item.id, item.transactionType, item.quantity + 1)}
+                              className="w-6 h-6 bg-gold-600 hover:bg-gold-700 text-white rounded flex items-center justify-center"
+                            >
+                              <Plus className="w-3 h-3" />
+                            </button>
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -498,8 +496,8 @@ function App() {
                       onClick={() => setShowPaymentModal(true)}
                       className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white py-2.5 rounded-lg font-bold transition shadow-lg hover:shadow-xl flex items-center justify-center gap-2 text-sm"
                     >
-                      <CreditCard className="w-4 h-4" />
-                      Tahsilat Yap
+                      <CheckCircle className="w-4 h-4" />
+                      İşlemi Tamamla
                     </button>
                   </div>
                 </>
@@ -509,7 +507,116 @@ function App() {
         </div>
       </div>
 
-      {/* Payment Modal */}
+      {/* Müşteri Seçim Modal */}
+      {showCustomerModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[80vh] overflow-hidden">
+            <div className="bg-gradient-to-r from-gold-700 to-gold-600 text-white p-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-bold flex items-center gap-2">
+                  <UserCircle className="w-6 h-6" />
+                  Müşteri Seç
+                </h3>
+                <button 
+                  onClick={() => setShowCustomerModal(false)}
+                  className="hover:bg-gold-600 rounded-full p-1 transition"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-4">
+              <div className="mb-4">
+                <input
+                  type="text"
+                  placeholder="Müşteri ara (isim veya telefon)..."
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-gold-500 focus:outline-none"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {filteredCustomers.map(customer => (
+                  <div
+                    key={customer.id}
+                    onClick={() => {
+                      setSelectedCustomer(customer);
+                      setShowCustomerModal(false);
+                      setSearchTerm('');
+                    }}
+                    className="p-3 border border-gray-200 rounded-lg hover:border-gold-500 hover:bg-gold-50 cursor-pointer transition"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-semibold text-gray-800 flex items-center gap-2">
+                          {customer.name}
+                          {customer.vip && <span className="text-xs bg-gold-600 text-white px-2 py-0.5 rounded-full">VIP</span>}
+                        </p>
+                        <p className="text-sm text-gray-600">{customer.phone}</p>
+                        <p className="text-xs text-gray-500">{customer.email}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs text-gray-500">Toplam</p>
+                        <p className="text-sm font-bold text-gold-700">₺{customer.totalPurchases.toLocaleString()}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Barkod Okuyucu Modal */}
+      {showBarcodeScanner && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-sm w-full">
+            <div className="bg-gradient-to-r from-gold-700 to-gold-600 text-white p-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-bold flex items-center gap-2">
+                  <Scan className="w-6 h-6" />
+                  Barkod Oku
+                </h3>
+                <button 
+                  onClick={() => setShowBarcodeScanner(false)}
+                  className="hover:bg-gold-600 rounded-full p-1 transition"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6">
+              <div className="bg-gray-100 rounded-lg p-8 mb-4 flex items-center justify-center">
+                <Camera className="w-24 h-24 text-gray-400" />
+              </div>
+              <p className="text-center text-gray-600 mb-4 text-sm">
+                Kamera ile barkod okutun veya manuel girin
+              </p>
+              <form onSubmit={handleBarcodeSubmit}>
+                <input
+                  ref={barcodeInputRef}
+                  type="text"
+                  placeholder="Barkod numarası..."
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-gold-500 focus:outline-none mb-4 text-center text-lg font-mono"
+                  autoFocus
+                />
+                <button
+                  type="submit"
+                  className="w-full bg-gold-600 hover:bg-gold-700 text-white py-3 rounded-lg font-bold transition"
+                >
+                  Ürün Ekle
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Ödeme Modal */}
       {showPaymentModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
@@ -517,7 +624,7 @@ function App() {
               <div className="flex items-center justify-between">
                 <h3 className="text-xl font-bold flex items-center gap-2">
                   <Calculator className="w-6 h-6" />
-                  Tahsilat İşlemi
+                  İşlem Onayı
                 </h3>
                 <button 
                   onClick={() => setShowPaymentModal(false)}
@@ -529,32 +636,28 @@ function App() {
             </div>
 
             <div className="p-6">
-              {/* Customer Info */}
-              <div className="mb-4">
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  <User className="w-4 h-4 inline mr-1" />
-                  Müşteri Adı
-                </label>
-                <input
-                  type="text"
-                  placeholder="Müşteri adını giriniz"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-gold-500 focus:outline-none"
-                  value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
-                />
-              </div>
+              {/* Müşteri Bilgisi */}
+              {selectedCustomer && (
+                <div className="mb-4 bg-gold-50 rounded-lg p-4 border border-gold-200">
+                  <h4 className="font-semibold text-gray-800 mb-2">Müşteri</h4>
+                  <p className="text-gray-700">{selectedCustomer.name}</p>
+                  <p className="text-sm text-gray-600">{selectedCustomer.phone}</p>
+                </div>
+              )}
 
-              {/* Order Summary */}
+              {/* Sipariş Özeti */}
               <div className="mb-4 bg-gray-50 rounded-lg p-4">
-                <h4 className="font-semibold text-gray-800 mb-3">Sipariş Özeti</h4>
+                <h4 className="font-semibold text-gray-800 mb-3">İşlem Özeti</h4>
                 <div className="space-y-2 mb-3 max-h-40 overflow-y-auto">
                   {cart.map(item => (
-                    <div key={item.id} className="flex justify-between text-sm">
+                    <div key={`${item.id}-${item.transactionType}`} className="flex justify-between text-sm">
                       <span className="text-gray-600">
-                        {item.name} x{item.quantity}
+                        <span className={`text-xs ${item.transactionType === 'satis' ? 'text-green-600' : 'text-blue-600'}`}>
+                          [{item.transactionType === 'satis' ? 'S' : 'A'}]
+                        </span> {item.name} x{item.quantity}
                       </span>
                       <span className="font-semibold">
-                        ₺{(item.price * item.quantity).toLocaleString('tr-TR')}
+                        ₺{((item.transactionType === 'satis' ? item.price : item.buyPrice) * item.quantity).toLocaleString('tr-TR')}
                       </span>
                     </div>
                   ))}
@@ -578,7 +681,7 @@ function App() {
                 </div>
               </div>
 
-              {/* Payment Method */}
+              {/* Ödeme Yöntemi */}
               <div className="mb-6">
                 <label className="block text-sm font-semibold text-gray-700 mb-3">
                   Ödeme Yöntemi
@@ -626,7 +729,7 @@ function App() {
                     }`}
                   >
                     <Calculator className="w-8 h-8 mx-auto mb-2 text-orange-600" />
-                    <span className="block text-sm font-semibold">Karma Ödeme</span>
+                    <span className="block text-sm font-semibold">Karma</span>
                   </button>
                 </div>
               </div>
@@ -644,7 +747,7 @@ function App() {
                   className="flex-1 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white py-3 rounded-lg font-semibold transition shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
                 >
                   <CheckCircle className="w-5 h-5" />
-                  Tahsilatı Tamamla
+                  Onayla
                 </button>
               </div>
             </div>
@@ -660,13 +763,19 @@ function App() {
               <CheckCircle className="w-12 h-12 text-green-600" />
             </div>
             <h3 className="text-2xl font-bold text-gray-800 mb-2">İşlem Başarılı!</h3>
-            <p className="text-gray-600 mb-4">Tahsilat işlemi tamamlandı.</p>
+            <p className="text-gray-600 mb-4">
+              {transactionType === 'satis' ? 'Satış' : 'Alış'} işlemi tamamlandı.
+            </p>
             <div className="bg-gold-50 rounded-lg p-4">
-              <p className="text-sm text-gray-700 mb-1">Müşteri: <strong>{customerName}</strong></p>
-              <p className="text-sm text-gray-700 mb-1">Toplam: <strong className="text-gold-700">
-                {currency === 'TRY' ? '₺' : currency === 'USD' ? '$' : currency === 'EUR' ? '€' : '£'}
-                {getTotalInCurrency()}
-              </strong></p>
+              <p className="text-sm text-gray-700 mb-1">
+                Müşteri: <strong>{selectedCustomer?.name}</strong>
+              </p>
+              <p className="text-sm text-gray-700 mb-1">
+                Toplam: <strong className="text-gold-700">
+                  {currency === 'TRY' ? '₺' : currency === 'USD' ? '$' : currency === 'EUR' ? '€' : '£'}
+                  {getTotalInCurrency()}
+                </strong>
+              </p>
               <p className="text-sm text-gray-700">
                 Ödeme: <strong>
                   {paymentMethod === 'cash' ? 'Nakit' : 
@@ -687,4 +796,3 @@ function App() {
 }
 
 export default App;
-
