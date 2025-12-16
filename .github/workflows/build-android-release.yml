@@ -1,0 +1,85 @@
+name: Build Android Release APK
+
+on:
+  push:
+    tags:
+      - 'v*'  # v1.0.0, v1.0.1 gibi tag'lerde çalışır
+  workflow_dispatch:  # Manuel başlatma
+
+jobs:
+  build-release:
+    name: Build Release APK & AAB
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout kod
+        uses: actions/checkout@v4
+      
+      - name: Node.js kur
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Java JDK 17 kur
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+      
+      - name: Bağımlılıkları yükle
+        run: npm ci
+      
+      - name: Web build (production)
+        run: npm run build
+      
+      - name: Capacitor sync
+        run: npx cap sync android
+      
+      - name: Gradle cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+      
+      - name: Android build permissions
+        run: chmod +x android/gradlew
+      
+      # Release APK (imzasız - test için)
+      - name: Release APK oluştur
+        run: |
+          cd android
+          ./gradlew assembleRelease --no-daemon
+      
+      # Release AAB (Play Store için)
+      - name: Release AAB oluştur
+        run: |
+          cd android
+          ./gradlew bundleRelease --no-daemon
+      
+      - name: APK'yı yükle
+        uses: actions/upload-artifact@v4
+        with:
+          name: goldcube-release-apk
+          path: android/app/build/outputs/apk/release/app-release-unsigned.apk
+          retention-days: 90
+      
+      - name: AAB'yi yükle
+        uses: actions/upload-artifact@v4
+        with:
+          name: goldcube-release-aab
+          path: android/app/build/outputs/bundle/release/app-release.aab
+          retention-days: 90
+      
+      - name: Build bilgisi
+        run: |
+          echo "✅ Release APK ve AAB başarıyla oluşturuldu!"
+          echo "📦 APK: android/app/build/outputs/apk/release/"
+          echo "📦 AAB: android/app/build/outputs/bundle/release/"
+          ls -lh android/app/build/outputs/apk/release/
+          ls -lh android/app/build/outputs/bundle/release/
+
