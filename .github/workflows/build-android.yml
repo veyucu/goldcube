@@ -50,13 +50,29 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
       
+      - name: Android SDK local properties
+        run: |
+          echo "sdk.dir=$ANDROID_HOME" > android/local.properties
+          cat android/local.properties
+      
       - name: Android build permissions
         run: chmod +x android/gradlew
+      
+      - name: Gradle wrapper properties kontrolü
+        run: |
+          if [ -f android/gradle/wrapper/gradle-wrapper.properties ]; then
+            echo "Gradle wrapper mevcut"
+            cat android/gradle/wrapper/gradle-wrapper.properties
+          else
+            echo "Gradle wrapper bulunamadı"
+          fi
       
       - name: Debug APK oluştur
         run: |
           cd android
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew assembleDebug --no-daemon --stacktrace --info
+        env:
+          GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx2048m"
       
       - name: APK'yı yükle (Artifact)
         uses: actions/upload-artifact@v4

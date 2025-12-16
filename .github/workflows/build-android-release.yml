@@ -49,6 +49,11 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
       
+      - name: Android SDK local properties
+        run: |
+          echo "sdk.dir=$ANDROID_HOME" > android/local.properties
+          cat android/local.properties
+      
       - name: Android build permissions
         run: chmod +x android/gradlew
       
@@ -56,13 +61,17 @@ jobs:
       - name: Release APK oluştur
         run: |
           cd android
-          ./gradlew assembleRelease --no-daemon
+          ./gradlew assembleRelease --no-daemon --stacktrace
+        env:
+          GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx2048m"
       
       # Release AAB (Play Store için)
       - name: Release AAB oluştur
         run: |
           cd android
-          ./gradlew bundleRelease --no-daemon
+          ./gradlew bundleRelease --no-daemon --stacktrace
+        env:
+          GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx2048m"
       
       - name: APK'yı yükle
         uses: actions/upload-artifact@v4
